@@ -124,17 +124,26 @@ func LogHandler(h http.Handler, opts *LogOptions) http.HandlerFunc {
 	}
 }
 
+// Based on https://groups.google.com/d/msg/golang-nuts/lomWKs0kOfE/gwmoD3cTxes
+func ipAddrFromRemoteAddr(s string) string {
+	idx := strings.LastIndex(s, ":")
+	if idx == -1 {
+		return s
+	}
+	return s[:idx]
+}
+
 func getIpAddress(r *http.Request) string {
 	hdr := r.Header
 	hdrRealIp := hdr.Get("X-Real-Ip")
 	hdrForwardedFor := hdr.Get("X-Forwarded-For")
 	if hdrRealIp == "" && hdrForwardedFor == "" {
-		return r.RemoteAddr
+		return ipAddrFromRemoteAddr(r.RemoteAddr)
 	}
 	if hdrForwardedFor != "" {
 		// X-Forwarded-For is potentially a list of addresses separated with ","
 		part := strings.Split(hdrForwardedFor, ",")[0]
-		return strings.TrimSpace(part) + ":0"
+		return strings.TrimSpace(part)
 	}
 	return hdrRealIp
 }
